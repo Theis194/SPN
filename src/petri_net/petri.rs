@@ -30,7 +30,7 @@ impl PetriNet {
         self.check_transitions();
         if let Some(transition_index) = self.get_next_transition_index() {
             let transition = &mut self.transitions[transition_index];
-            println!("Lowest firing time {:?}", transition);
+            //println!("Lowest firing time {:?}", transition);
 
             for &from in &transition.from {
                 self.places[from] -= 1;

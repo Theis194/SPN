@@ -1,18 +1,15 @@
+use std::time::Instant;
 use SPN::{PetriNet, Transition};
 
 fn main() {
-    let places: Vec<u32> = vec![2,0];
-    let transitions: Vec<Transition> = vec![
-        Transition {
-            from: vec![0],
-            to: vec![1],
-            firing_time: -1.0,
-        },
-        Transition {
-            from: vec![1],
-            to: vec![0],
-            firing_time: -1.0,
-        },
+    // Places: P0 = Producer, P1 = Buffer, P2 = Consumer
+    let places = vec![1, 1, 0];
+
+    // Transitions: T0 (produce), T1 (consume), T2 (reset)
+    let transitions = vec![
+        Transition::new(vec![0], vec![1]), // T0: Producer to Buffer
+        Transition::new(vec![1], vec![2]), // T1: Buffer to Consumer
+        Transition::new(vec![2], vec![0]), // T2: Consumer resets Producer
     ];
 
     let mut petri_net = PetriNet::new();
@@ -20,11 +17,14 @@ fn main() {
         .add_places(places)
         .add_transitions(transitions);
 
-    for _ in 0..3 {
-        if petri_net.fire() {
-            println!("fired: {:?}", petri_net)
-        } else {
-            println!("failed")
+    let start = Instant::now();
+
+    for _ in 0..100 {
+        if !petri_net.fire() {
+            break; // Stop on deadlock
         }
     }
+
+    let duration = start.elapsed();
+    println!("Simulation took: {:?} ms", duration.as_secs_f64() * 1000.0);
 }
