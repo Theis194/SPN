@@ -1,7 +1,16 @@
 use std::time::Instant;
 use SPN::{PetriNet, Transition};
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+struct Args {
+    // Amount of simulations to run
+    simulations: u64,
+}
 
 fn main() {
+    let args: Args = Args::parse();
+
     // Places: P0 = Producer, P1 = Buffer, P2 = Consumer
     let places = vec![1, 1, 0];
 
@@ -19,7 +28,7 @@ fn main() {
 
     let start = Instant::now();
 
-    for _ in 0..100 {
+    for _ in 0..args.simulations {
         if !petri_net.fire() {
             break; // Stop on deadlock
         }
