@@ -35,5 +35,5 @@ fn main() {
     }
 
     let duration = start.elapsed();
-    println!("Simulation took: {:?} ms", duration.as_secs_f64() * 1000.0);
+    println!("{:?}", duration.as_secs_f64() * 1000.0);
 }
