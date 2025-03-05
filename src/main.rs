@@ -1,4 +1,5 @@
 use std::time::Instant;
+use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use clap::Parser;
@@ -9,68 +10,41 @@ use SPN::{ PetriNet, Transition };
 struct Args {
     // Amount of simulations to run
     simulations: u64,
-
-    // Optional amount of threads to use
-    #[clap(short, long, default_value_t = num_cpus::get() as u64)]
-    threads: u64,
 }
 
 fn main() {
     let args: Args = Args::parse();
-
-    let num_threads = args.threads as u64;
+    let num_threads = num_cpus::get();
     let simulations_per_thread = args.simulations / num_threads as u64;
-    let remainder = args.simulations % num_threads as u64;
-
+    
     let start = Instant::now();
     let mut handles = vec![];
 
-    let shared_deadlock_flag = Arc::new(Mutex::new(false));
-
-    for i in 0..num_threads {
-        let deadlock_flag = Arc::clone(&shared_deadlock_flag);
-
-        let thread_simulations = if i == 0 {
-            simulations_per_thread + remainder
-        } else {
-            simulations_per_thread
-        };
-
+    for _ in 0..num_threads {
         let handle = thread::spawn(move || {
-            // Places: P0 = Producer, P1 = Buffer, P2 = Consumer
-            let places = vec![1, 1, 0];
-        
-            // Transitions: T0 (produce), T1 (consume), T2 (reset)
-            let transitions = vec![
-                Transition::new(vec![0], vec![1]), // T0: Producer to Buffer
-                Transition::new(vec![1], vec![2]), // T1: Buffer to Consumer
-                Transition::new(vec![2], vec![0]) // T2: Consumer resets Producer
-            ];
-        
+            let mut failures = 0;
             let mut petri_net = PetriNet::new();
-            petri_net.add_places(places).add_transitions(transitions);
+            petri_net.add_places(vec![1, 1, 0])
+                     .add_transitions(vec![
+                         Transition::new(vec![0], vec![1]),
+                         Transition::new(vec![1], vec![2]),
+                         Transition::new(vec![2], vec![0]),
+                     ]);
 
-            for _ in 0..thread_simulations {
-                let mut flag = deadlock_flag.lock().unwrap();
-
-                if *flag {
-                    break;
-                }
- 
+            for _ in 0..simulations_per_thread {
                 if !petri_net.fire() {
-                    *flag = true;
-                    break; // Stop on deadlock
+                    failures += 1;
                 }
             }
+            failures
         });
 
         handles.push(handle);
     }
 
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    let total_failures: usize = handles.into_iter().map(|h| h.join().unwrap()).sum();
 
     let duration = start.elapsed();
     println!("Simulation took: {:?} ms", duration.as_secs_f64() * 1000.0);
+    println!("Failed simulations: {}", total_failures);
 }
