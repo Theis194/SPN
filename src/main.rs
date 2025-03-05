@@ -14,8 +14,16 @@ struct Args {
 
 fn main() {
     let args: Args = Args::parse();
+    
+    let duration = parallel_simulation(args.simulations);
+
+    println!("Simulation took: {:?} ms", duration.0);
+    println!("Failed simulations: {}", duration.1);
+}
+
+fn parallel_simulation(simulations: u64) -> (f64, usize) {
     let num_threads = num_cpus::get();
-    let simulations_per_thread = args.simulations / num_threads as u64;
+    let simulations_per_thread = simulations / num_threads as u64;
     
     let start = Instant::now();
     let mut handles = vec![];
@@ -45,6 +53,6 @@ fn main() {
     let total_failures: usize = handles.into_iter().map(|h| h.join().unwrap()).sum();
 
     let duration = start.elapsed();
-    println!("Simulation took: {:?} ms", duration.as_secs_f64() * 1000.0);
-    println!("Failed simulations: {}", total_failures);
+
+    (duration.as_secs_f64() * 1000.0, total_failures)
 }
