@@ -15,7 +15,7 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
     
-    let duration = parallel_simulation(args.simulations);
+    let duration = sequential_simulation(args.simulations);
 
     println!("Simulation took: {:?} ms", duration.0);
     println!("Failed simulations: {}", duration.1);
