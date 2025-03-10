@@ -11,6 +11,13 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
 
+    
+
+    let duration = sequential_simulation(args.simulations);
+    println!("{:?}", duration);
+}
+
+fn sequential_simulation(simulations: u64) -> f64 {
     // Places: P0 = Producer, P1 = Buffer, P2 = Consumer
     let places = vec![1, 1, 0];
 
@@ -28,12 +35,11 @@ fn main() {
 
     let start = Instant::now();
 
-    for _ in 0..args.simulations {
+    for _ in 0..simulations {
         if !petri_net.fire() {
             break; // Stop on deadlock
         }
     }
 
-    let duration = start.elapsed();
-    println!("{:?}", duration.as_secs_f64() * 1000.0);
+    start.elapsed().as_secs_f64() * 1000.0
 }
